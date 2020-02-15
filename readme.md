@@ -5,6 +5,10 @@ The way how it works is to check parent tcp connection with a uuid.
 
 Not using the pid is because after a process exits, newly created process may have the same pid.
 
+# How to Use
+
+See the [examples](example_test.go)
+
 ## Deploy
 
 ```
