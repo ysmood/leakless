@@ -57,6 +57,6 @@ func guard(uid, addr string, cmd *exec.Cmd) {
 
 func kill(cmd *exec.Cmd) {
 	if cmd.Process != nil {
-		cmd.Process.Kill()
+		_ = cmd.Process.Kill()
 	}
 }

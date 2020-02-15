@@ -19,7 +19,7 @@ type stamp struct {
 }
 
 func TestMain(m *testing.M) {
-	kit.Mkdir("dist", nil)
+	kit.E(kit.Mkdir("dist", nil))
 	kit.Exec("go", "build", "../cmd/leakless").Dir("dist").MustDo()
 	kit.Exec("go", "build", "../cmd/test").Dir("dist").MustDo()
 	kit.Exec("go", "build", "../cmd/zombie").Dir("dist").MustDo()

@@ -69,6 +69,8 @@ func (l *Leakless) serve(uid string) string {
 			}
 
 			_, _ = conn.Write(byframe.Encode([]byte(uid)))
+			buf := make([]byte, 1)
+			_, _ = conn.Read(buf)
 		}
 	}()
 
