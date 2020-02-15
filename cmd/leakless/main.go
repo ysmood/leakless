@@ -43,7 +43,7 @@ func guard(uid, addr string, cmd *exec.Cmd) {
 		kill(cmd)
 	}
 
-	s := byframe.NewScanner(conn)
+	s := byframe.NewScanner(conn).Limit(100)
 	s.Scan()
 	if string(s.Frame()) != uid {
 		kill(cmd)

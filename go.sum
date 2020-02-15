@@ -117,6 +117,8 @@ github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 h1:nIPpBwaJSVYIxUFsDv3M8ofm
 github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8/go.mod h1:HUYIGzjTL3rfEspMxjDjgmT5uz5wzYJKVo23qUhYTos=
 github.com/ysmood/byframe v1.1.1 h1:lxF6RvUaLH+EgT1GAngb/4y6wmISStycGzdQLUgHnhc=
 github.com/ysmood/byframe v1.1.1/go.mod h1:6EorTJPCTaSuwYzEOyW/Tfz8jr6eV8csxa7WafEKiUg=
+github.com/ysmood/byframe v1.1.2 h1:PUuOp4ts5RzYu+Y5Iq0hVbfAsLhbX98GhsNexOXkBx8=
+github.com/ysmood/byframe v1.1.2/go.mod h1:6EorTJPCTaSuwYzEOyW/Tfz8jr6eV8csxa7WafEKiUg=
 github.com/ysmood/kit v0.21.0 h1:Q7BFrHN72aQvWtr4YUy5I150zZwD/5TVkw6/bThoqU4=
 github.com/ysmood/kit v0.21.0/go.mod h1:Zx/NOVFNTmc4cQ41dn4fgF/IMCuPQV+FccONuRCtGj4=
 github.com/ysmood/lookpath v1.1.0 h1:heliJRj3thM8qw7236g5qDeI+vKELGndm+SWzwjxHqI=
