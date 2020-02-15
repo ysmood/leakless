@@ -34,8 +34,8 @@ func TestBasic(t *testing.T) {
 
 	done := false
 	prev := ""
-	for range make([]int, 10) {
-		kit.Sleep(0.1)
+	for range make([]int, 5) {
+		kit.Sleep(1)
 		var s stamp
 		_ = kit.ReadJSON(p("tmp/pid"), &s)
 		assert.NotEmpty(t, s.Time)
@@ -53,8 +53,8 @@ func TestZombie(t *testing.T) {
 
 	done := false
 	prev := ""
-	for range make([]int, 10) {
-		kit.Sleep(0.1)
+	for range make([]int, 5) {
+		kit.Sleep(1)
 		var s stamp
 		_ = kit.ReadJSON(p("tmp/pid"), &s)
 		assert.NotEmpty(t, s.Time)

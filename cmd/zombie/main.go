@@ -15,7 +15,7 @@ type stamp struct {
 
 func main() {
 	go func() {
-		kit.Sleep(5)
+		kit.Sleep(10)
 		os.Exit(1)
 	}()
 
@@ -28,6 +28,6 @@ func main() {
 			Time: now,
 		}
 		kit.E(kit.OutputFile(filepath.FromSlash("tmp/pid"), s, nil))
-		kit.Sleep(0.1)
+		kit.Sleep(0.3)
 	}
 }
