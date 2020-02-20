@@ -10,7 +10,7 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/ysmood/byframe"
 	"github.com/ysmood/kit"
-	"github.com/ysmood/leakless/version"
+	"github.com/ysmood/leakless/lib"
 )
 
 // Leakless ...
@@ -78,7 +78,7 @@ func (l *Leakless) serve(uid string) string {
 }
 
 func (l *Leakless) getLeaklessBin() (string, error) {
-	dir := filepath.Join(os.TempDir(), "leakless-"+version.V)
+	dir := filepath.Join(os.TempDir(), "leakless-"+lib.Version)
 	bin := filepath.Join(dir, "leakless")
 
 	if kit.FileExists(bin) {
@@ -90,7 +90,7 @@ func (l *Leakless) getLeaklessBin() (string, error) {
 		host = "https://github.com/ysmood/leakless/releases/download/"
 	}
 
-	urlPrefix := host + version.V + "/"
+	urlPrefix := host + lib.Version + "/"
 	zipName := ""
 
 	switch runtime.GOOS {

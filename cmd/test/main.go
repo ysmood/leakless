@@ -18,6 +18,6 @@ func main() {
 		cmd = exec.Command(p("dist/zombie"))
 	}
 	kit.E(cmd.Start())
-	cmd.Process.Release()
+	kit.E(cmd.Process.Release())
 	kit.Sleep(2)
 }

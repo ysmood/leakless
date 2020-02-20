@@ -6,12 +6,16 @@ import (
 	"os/exec"
 
 	"github.com/ysmood/byframe"
-	"github.com/ysmood/leakless/version"
+	"github.com/ysmood/leakless/lib"
 )
 
 func main() {
+	if len(os.Args) < 4 {
+		panic("wrong args, usage: leakless <uid> <tcp-addr> <cmd> [args...]")
+	}
+
 	if os.Args[1] == "--version" {
-		_, _ = os.Stdout.WriteString(version.V + "\n")
+		_, _ = os.Stdout.WriteString(lib.Version + "\n")
 		return
 	}
 
