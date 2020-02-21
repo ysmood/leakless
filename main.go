@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 
 	"github.com/mholt/archiver"
 	"github.com/ysmood/byframe"
@@ -17,11 +18,14 @@ import (
 type Leakless struct {
 	bin  string
 	host string
+	pid  chan int
 }
 
 // New leakless instance
 func New() *Leakless {
-	return &Leakless{}
+	return &Leakless{
+		pid: make(chan int),
+	}
 }
 
 // Bin sets the leakless bin location
@@ -55,6 +59,11 @@ func (l *Leakless) Command(name string, arg ...string) *exec.Cmd {
 	return exec.Command(bin, arg...)
 }
 
+// Pid signals the pid of the guarded sub-process. The channel may never receive the pid.
+func (l *Leakless) Pid() chan int {
+	return l.pid
+}
+
 func (l *Leakless) serve(uid string) string {
 	srv, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -68,9 +77,17 @@ func (l *Leakless) serve(uid string) string {
 				return
 			}
 
-			_, _ = conn.Write(byframe.Encode([]byte(uid)))
-			buf := make([]byte, 1)
-			_, _ = conn.Read(buf)
+			_, err = conn.Write(byframe.Encode([]byte(uid)))
+			kit.E(err)
+
+			s := byframe.NewScanner(conn).Limit(100)
+			s.Scan()
+			pid, err := strconv.ParseInt(string(s.Frame()), 10, 64)
+			kit.E(err)
+
+			l.pid <- int(pid)
+
+			s.Scan()
 		}
 	}()
 

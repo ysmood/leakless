@@ -4,6 +4,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"strconv"
 
 	"github.com/ysmood/byframe"
 	"github.com/ysmood/leakless/lib"
@@ -23,14 +24,18 @@ func main() {
 	addr := os.Args[2]
 
 	cmd := exec.Command(os.Args[3], os.Args[4:]...)
-
-	go guard(uid, addr, cmd)
-
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
+	err := cmd.Start()
+	if err != nil {
+		panic("[leakless] " + err.Error())
+	}
+
+	go guard(uid, addr, cmd.Process.Pid, cmd)
+
+	err = cmd.Wait()
 	if err != nil {
 		exitErr, ok := err.(*exec.ExitError)
 		if ok {
@@ -41,7 +46,7 @@ func main() {
 	}
 }
 
-func guard(uid, addr string, cmd *exec.Cmd) {
+func guard(uid, addr string, pid int, cmd *exec.Cmd) {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		kill(cmd)
@@ -53,8 +58,12 @@ func guard(uid, addr string, cmd *exec.Cmd) {
 		kill(cmd)
 	}
 
-	buf := make([]byte, 1)
-	_, _ = conn.Read(buf)
+	_, err = conn.Write(byframe.Encode([]byte(strconv.Itoa(pid))))
+	if err != nil {
+		kill(cmd)
+	}
+
+	s.Scan()
 
 	kill(cmd)
 }

@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -14,8 +15,8 @@ import (
 var p = filepath.FromSlash
 
 type stamp struct {
-	PID  int
-	Time string
+	Pid  int
+	Time time.Time
 }
 
 func TestMain(m *testing.M) {
@@ -32,18 +33,15 @@ func TestBasic(t *testing.T) {
 
 	kit.E(cmd.Run())
 
-	done := false
-	prev := ""
-	for range make([]int, 5) {
-		kit.Sleep(1)
-		var s stamp
-		_ = kit.ReadJSON(p("tmp/pid"), &s)
-		assert.NotEmpty(t, s.Time)
+	kit.Sleep(2)
+	var s stamp
+	var pid int
+	_ = kit.ReadJSON(p("tmp/pid"), &s)
+	_ = kit.ReadJSON(p("tmp/sub-pid"), &pid)
 
-		done = prev == s.Time
-		prev = s.Time
-	}
-	assert.True(t, done)
+	assert.NotEmpty(t, s.Pid)
+	assert.Equal(t, s.Pid, pid)
+	assert.True(t, time.Since(s.Time) > time.Second)
 }
 
 func TestZombie(t *testing.T) {
@@ -51,16 +49,10 @@ func TestZombie(t *testing.T) {
 
 	kit.E(cmd.Run())
 
-	done := false
-	prev := ""
-	for range make([]int, 5) {
-		kit.Sleep(1)
-		var s stamp
-		_ = kit.ReadJSON(p("tmp/pid"), &s)
-		assert.NotEmpty(t, s.Time)
+	kit.Sleep(2)
+	var s stamp
+	_ = kit.ReadJSON(p("tmp/pid"), &s)
 
-		done = prev == s.Time
-		prev = s.Time
-	}
-	assert.False(t, done)
+	assert.NotEmpty(t, s.Pid)
+	assert.True(t, time.Since(s.Time) < time.Second)
 }
