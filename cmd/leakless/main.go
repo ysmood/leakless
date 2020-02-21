@@ -11,13 +11,13 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 4 {
-		panic("wrong args, usage: leakless <uid> <tcp-addr> <cmd> [args...]")
-	}
-
-	if os.Args[1] == "--version" {
+	if len(os.Args) == 2 && os.Args[1] == "--version" {
 		_, _ = os.Stdout.WriteString(lib.Version + "\n")
 		return
+	}
+
+	if len(os.Args) < 4 {
+		panic("wrong args, usage: leakless <uid> <tcp-addr> <cmd> [args...]")
 	}
 
 	uid := os.Args[1]
