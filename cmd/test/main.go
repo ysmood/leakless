@@ -18,6 +18,10 @@ func main() {
 		cmd = exec.Command(p("dist/zombie"))
 	}
 	kit.E(cmd.Start())
-	kit.E(cmd.Process.Release())
-	kit.Sleep(2)
+	if os.Args[2] == "exit" {
+		kit.E(cmd.Process.Release())
+		kit.Sleep(2)
+	} else {
+		kit.E(cmd.Wait())
+	}
 }

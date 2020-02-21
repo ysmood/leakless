@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
 	"github.com/ysmood/kit"
+	"github.com/ysmood/leakless/lib"
 )
 
 var p = filepath.FromSlash
@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestBasic(t *testing.T) {
-	cmd := exec.Command(p("dist/test"), "on")
+	cmd := exec.Command(p("dist/test"), "on", "exit")
 
 	kit.E(cmd.Run())
 
@@ -46,8 +46,31 @@ func TestBasic(t *testing.T) {
 	assert.True(t, done)
 }
 
+func TestSignal(t *testing.T) {
+	cmd := exec.Command(p("dist/test"), "on", "off")
+
+	kit.E(cmd.Start())
+
+	kit.Sleep(1)
+
+	kit.E(lib.Signal(cmd, os.Interrupt))
+
+	done := false
+	prev := ""
+	for range make([]int, 5) {
+		kit.Sleep(1)
+		var s stamp
+		_ = kit.ReadJSON(p("tmp/pid"), &s)
+		assert.NotEmpty(t, s.Time)
+
+		done = prev == s.Time
+		prev = s.Time
+	}
+	assert.True(t, done)
+}
+
 func TestZombie(t *testing.T) {
-	cmd := exec.Command(p("dist/test"), "off")
+	cmd := exec.Command(p("dist/test"), "off", "exit")
 
 	kit.E(cmd.Run())
 

@@ -4,6 +4,8 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"os/signal"
+	"syscall"
 
 	"github.com/ysmood/byframe"
 	"github.com/ysmood/leakless/lib"
@@ -25,6 +27,7 @@ func main() {
 	cmd := exec.Command(os.Args[3], os.Args[4:]...)
 
 	go guard(uid, addr, cmd)
+	go handleSignal(cmd)
 
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -59,8 +62,20 @@ func guard(uid, addr string, cmd *exec.Cmd) {
 	kill(cmd)
 }
 
+func handleSignal(cmd *exec.Cmd) {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	for sig := range c {
+		err := lib.Signal(cmd, sig)
+		if err != nil {
+			kill(cmd)
+		}
+	}
+}
+
 func kill(cmd *exec.Cmd) {
-	if cmd.Process != nil {
+	if cmd != nil && cmd.Process != nil {
 		_ = cmd.Process.Kill()
 	}
 }
