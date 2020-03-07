@@ -132,10 +132,7 @@ func (l *Launcher) getLeaklessBin() (string, error) {
 		return "", err
 	}
 
-	err = os.RemoveAll(dir)
-	if err != nil {
-		return "", err
-	}
+	_ = os.Remove(bin)
 
 	err = archiver.Unarchive(zip, dir)
 	if err != nil {
