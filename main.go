@@ -14,41 +14,40 @@ import (
 	"github.com/ysmood/leakless/lib"
 )
 
-// Leakless ...
-type Leakless struct {
+// Launcher struct
+type Launcher struct {
 	bin  string
 	host string
 	pid  chan int
 }
 
 // New leakless instance
-func New() *Leakless {
-	return &Leakless{
+func New() *Launcher {
+	return &Launcher{
 		pid: make(chan int),
 	}
 }
 
 // Bin sets the leakless bin location
-func (l *Leakless) Bin(path string) *Leakless {
+func (l *Launcher) Bin(path string) *Launcher {
 	l.bin = path
 	return l
 }
 
 // Host sets the host to download leakless bin
-func (l *Leakless) Host(host string) *Leakless {
+func (l *Launcher) Host(host string) *Launcher {
 	l.host = host
 	return l
 }
 
-// Command will try to download the leakless bin and prefix the exec.Cmd with
-// the leakless options. If it fails to download the bin a normal exec.Cmd will be returned.
-func (l *Leakless) Command(name string, arg ...string) *exec.Cmd {
+// Command will try to download the leakless bin and prefix the exec.Cmd with the leakless options.
+func (l *Launcher) Command(name string, arg ...string) *exec.Cmd {
 	bin := l.bin
 	if bin == "" {
 		var err error
 		bin, err = l.getLeaklessBin()
 		if err != nil {
-			return exec.Command(name, arg...)
+			panic(err)
 		}
 	}
 
@@ -60,43 +59,45 @@ func (l *Leakless) Command(name string, arg ...string) *exec.Cmd {
 }
 
 // Pid signals the pid of the guarded sub-process. The channel may never receive the pid.
-func (l *Leakless) Pid() chan int {
+func (l *Launcher) Pid() chan int {
 	return l.pid
 }
 
-func (l *Leakless) serve(uid string) string {
+func (l *Launcher) serve(uid string) string {
 	srv, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		panic("[leakless] serve error: " + err.Error())
 	}
 
 	go func() {
-		for {
-			conn, err := srv.Accept()
-			if err != nil {
-				return
-			}
-
-			_, err = conn.Write(byframe.Encode([]byte(uid)))
-			kit.E(err)
-
-			s := byframe.NewScanner(conn).Limit(100)
-			s.Scan()
-			pid, err := strconv.ParseInt(string(s.Frame()), 10, 64)
-			kit.E(err)
-
-			l.pid <- int(pid)
-
-			s.Scan()
+		conn, err := srv.Accept()
+		if err != nil {
+			return
 		}
+
+		_, err = conn.Write(byframe.Encode([]byte(uid)))
+		kit.E(err)
+
+		s := byframe.NewScanner(conn).Limit(100)
+		s.Scan()
+		pid, err := strconv.ParseInt(string(s.Frame()), 10, 64)
+		kit.E(err)
+
+		l.pid <- int(pid)
+
+		s.Scan()
 	}()
 
 	return srv.Addr().String()
 }
 
-func (l *Leakless) getLeaklessBin() (string, error) {
+func (l *Launcher) getLeaklessBin() (string, error) {
 	dir := filepath.Join(os.TempDir(), "leakless-"+lib.Version)
 	bin := filepath.Join(dir, "leakless")
+
+	if runtime.GOOS == "windows" {
+		bin += ".exe"
+	}
 
 	if kit.FileExists(bin) {
 		return bin, nil
@@ -127,6 +128,11 @@ func (l *Leakless) getLeaklessBin() (string, error) {
 	zip := filepath.Join(dir, zipName)
 
 	err = kit.OutputFile(zip, data, nil)
+	if err != nil {
+		return "", err
+	}
+
+	err = os.RemoveAll(dir)
 	if err != nil {
 		return "", err
 	}
