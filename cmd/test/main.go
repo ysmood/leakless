@@ -13,7 +13,7 @@ func main() {
 	p := filepath.FromSlash
 	var cmd *exec.Cmd
 	if os.Args[1] == "on" {
-		l := leakless.New().Bin(p("dist/leakless"))
+		l := leakless.New()
 		cmd = l.Command(p("dist/zombie"))
 		go func() {
 			pid := <-l.Pid()

@@ -1,6 +1,10 @@
+//go:generate go run ./cmd/pack
+
 package leakless
 
 import (
+	"bytes"
+	"encoding/base64"
 	"net"
 	"os"
 	"os/exec"
@@ -16,9 +20,7 @@ import (
 
 // Launcher struct
 type Launcher struct {
-	bin  string
-	host string
-	pid  chan int
+	pid chan int
 }
 
 // New leakless instance
@@ -28,28 +30,9 @@ func New() *Launcher {
 	}
 }
 
-// Bin sets the leakless bin location
-func (l *Launcher) Bin(path string) *Launcher {
-	l.bin = path
-	return l
-}
-
-// Host sets the host to download leakless bin
-func (l *Launcher) Host(host string) *Launcher {
-	l.host = host
-	return l
-}
-
 // Command will try to download the leakless bin and prefix the exec.Cmd with the leakless options.
 func (l *Launcher) Command(name string, arg ...string) *exec.Cmd {
-	bin := l.bin
-	if bin == "" {
-		var err error
-		bin, err = l.getLeaklessBin()
-		if err != nil {
-			panic(err)
-		}
-	}
+	bin := l.getLeaklessBin()
 
 	uid := kit.RandString(16)
 	addr := l.serve(uid)
@@ -91,7 +74,7 @@ func (l *Launcher) serve(uid string) string {
 	return srv.Addr().String()
 }
 
-func (l *Launcher) getLeaklessBin() (string, error) {
+func (l *Launcher) getLeaklessBin() string {
 	dir := filepath.Join(os.TempDir(), "leakless-"+lib.Version)
 	bin := filepath.Join(dir, "leakless")
 
@@ -99,45 +82,17 @@ func (l *Launcher) getLeaklessBin() (string, error) {
 		bin += ".exe"
 	}
 
-	if kit.FileExists(bin) {
-		return bin, nil
+	if !kit.FileExists(bin) {
+		gz := &archiver.Gz{CompressionLevel: 9}
+		decompressed := bytes.NewBuffer(nil)
+		data, err := base64.StdEncoding.DecodeString(leaklessBin)
+		kit.E(err)
+		kit.E(gz.Decompress(bytes.NewReader(data), decompressed))
+
+		err = kit.OutputFile(bin, decompressed.Bytes(), nil)
+		kit.E(err)
+		kit.E(kit.Chmod(bin, 0755))
 	}
 
-	host := l.host
-	if host == "" {
-		host = "https://github.com/ysmood/leakless/releases/download/"
-	}
-
-	urlPrefix := host + lib.Version + "/"
-	zipName := ""
-
-	switch runtime.GOOS {
-	case "linux":
-		zipName += "leakless-linux.tar.gz"
-	case "darwin":
-		zipName += "leakless-mac.zip"
-	case "windows":
-		zipName += "leakless-windows.zip"
-	}
-
-	data, err := kit.Req(urlPrefix + zipName).Bytes()
-	if err != nil {
-		return "", err
-	}
-
-	zip := filepath.Join(dir, zipName)
-
-	err = kit.OutputFile(zip, data, nil)
-	if err != nil {
-		return "", err
-	}
-
-	_ = os.Remove(bin)
-
-	err = archiver.Unarchive(zip, dir)
-	if err != nil {
-		return "", err
-	}
-
-	return bin, nil
+	return bin
 }

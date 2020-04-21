@@ -1,6 +1,6 @@
 module github.com/ysmood/leakless
 
-go 1.13
+go 1.14
 
 require (
 	github.com/mholt/archiver v3.1.1+incompatible

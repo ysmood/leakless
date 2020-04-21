@@ -21,7 +21,6 @@ type stamp struct {
 
 func TestMain(m *testing.M) {
 	kit.E(kit.Mkdir("dist", nil))
-	kit.Exec("go", "build", "../cmd/leakless").Dir("dist").MustDo()
 	kit.Exec("go", "build", "../cmd/test").Dir("dist").MustDo()
 	kit.Exec("go", "build", "../cmd/zombie").Dir("dist").MustDo()
 
@@ -29,9 +28,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestBasic(t *testing.T) {
-	cmd := exec.Command(p("dist/test"), "on")
-
-	kit.E(cmd.Run())
+	kit.Exec(p("dist/test"), "on").MustDo()
 
 	kit.Sleep(2)
 	var s stamp
