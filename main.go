@@ -10,10 +10,9 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strconv"
 
-	"github.com/mholt/archiver"
-	"github.com/ysmood/byframe"
+	"github.com/mholt/archiver/v3"
+	"github.com/ysmood/byframe/v2"
 	"github.com/ysmood/kit"
 	"github.com/ysmood/leakless/lib"
 )
@@ -21,6 +20,7 @@ import (
 // Launcher struct
 type Launcher struct {
 	pid chan int
+	err string
 }
 
 // New leakless instance
@@ -46,6 +46,11 @@ func (l *Launcher) Pid() chan int {
 	return l.pid
 }
 
+// Err message from the guard process
+func (l *Launcher) Err() string {
+	return l.err
+}
+
 func (l *Launcher) serve(uid string) string {
 	srv, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -58,17 +63,20 @@ func (l *Launcher) serve(uid string) string {
 			return
 		}
 
-		_, err = conn.Write(byframe.Encode([]byte(uid)))
+		data, err := byframe.Encode(lib.Message{UID: uid})
+		kit.E(err)
+		_, err = conn.Write(data)
 		kit.E(err)
 
-		s := byframe.NewScanner(conn).Limit(100)
-		s.Scan()
-		pid, err := strconv.ParseInt(string(s.Frame()), 10, 64)
-		kit.E(err)
+		s := byframe.NewScanner(conn).Limit(1000)
+		for s.Scan() {
+			var msg lib.Message
+			err = s.Decode(&msg)
+			kit.E(err)
 
-		l.pid <- int(pid)
-
-		s.Scan()
+			l.err = msg.Error
+			l.pid <- msg.PID
+		}
 	}()
 
 	return srv.Addr().String()

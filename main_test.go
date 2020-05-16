@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ysmood/kit"
+	"github.com/ysmood/leakless"
+	"github.com/ysmood/leakless/lib"
 )
 
 var p = filepath.FromSlash
@@ -20,6 +22,8 @@ type stamp struct {
 }
 
 func TestMain(m *testing.M) {
+	binDir := filepath.Join(os.TempDir(), "leakless-"+lib.Version)
+	kit.E(os.RemoveAll(binDir))
 	kit.E(kit.Mkdir("dist", nil))
 	kit.Exec("go", "build", "../cmd/test").Dir("dist").MustDo()
 	kit.Exec("go", "build", "../cmd/zombie").Dir("dist").MustDo()
@@ -39,6 +43,15 @@ func TestBasic(t *testing.T) {
 	assert.NotEmpty(t, s.Pid)
 	assert.Equal(t, s.Pid, pid)
 	assert.True(t, time.Since(s.Time) > time.Second)
+}
+
+func TestErr(t *testing.T) {
+	l := leakless.New()
+	kit.E(l.Command("not-exists").Start())
+
+	pid := <-l.Pid()
+	assert.Zero(t, pid)
+	assert.Regexp(t, `executable file not found`, l.Err())
 }
 
 func TestZombie(t *testing.T) {

@@ -22,6 +22,8 @@ func main() {
 	} else {
 		cmd = exec.Command(p("dist/zombie"))
 	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	kit.E(cmd.Start())
 	kit.E(cmd.Process.Release())
 	kit.Sleep(2)
