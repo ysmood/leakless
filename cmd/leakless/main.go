@@ -33,6 +33,13 @@ func main() {
 	err = cmd.Start()
 	if err != nil {
 		send(conn, 0, err.Error())
+		panicErr(err)
+	}
+
+	err = deathsig(cmd.Process)
+	if err != nil {
+		send(conn, cmd.Process.Pid, err.Error())
+		panicErr(err)
 	}
 
 	send(conn, cmd.Process.Pid, "")
