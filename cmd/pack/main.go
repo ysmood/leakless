@@ -2,11 +2,11 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/base64"
 	"fmt"
 	"path/filepath"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/ysmood/kit"
 )
 
@@ -34,15 +34,17 @@ func pack(osName string) {
 
 	kit.E(err)
 
-	gz := &archiver.Gz{CompressionLevel: 9}
-	compressed := bytes.NewBuffer(nil)
-	kit.E(gz.Compress(bytes.NewReader(bin), compressed))
+	buf := bytes.Buffer{}
+	gw, err := gzip.NewWriterLevel(&buf, 9)
+	kit.E(err)
+	kit.E(gw.Write(bin))
+	kit.E(gw.Close())
 
 	tpl := `package leakless
 
 var leaklessBin = "%s"
 `
-	code := fmt.Sprintf(tpl, base64.StdEncoding.EncodeToString(compressed.Bytes()))
+	code := fmt.Sprintf(tpl, base64.StdEncoding.EncodeToString(buf.Bytes()))
 
 	kit.E(kit.OutputFile(fmt.Sprintf("bin_%s.go", osName), code, nil))
 }
