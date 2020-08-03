@@ -107,3 +107,8 @@ func (l *Launcher) getLeaklessBin() string {
 
 	return bin
 }
+
+// Support returns true if the OS is supported by leakless.
+func Support() bool {
+	return runtime.GOARCH == "amd64"
+}

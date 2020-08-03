@@ -31,6 +31,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestBasic(t *testing.T) {
+	assert.True(t, leakless.Support())
+
 	lib.Exec(p("dist/test"), "", "on")
 
 	lib.Sleep(2)
