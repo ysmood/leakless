@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -14,8 +15,6 @@ import (
 	"runtime"
 
 	"github.com/ysmood/byframe/v2"
-	kos "github.com/ysmood/kit/pkg/os"
-	"github.com/ysmood/kit/pkg/utils"
 	"github.com/ysmood/leakless/lib"
 )
 
@@ -36,7 +35,7 @@ func New() *Launcher {
 func (l *Launcher) Command(name string, arg ...string) *exec.Cmd {
 	bin := l.getLeaklessBin()
 
-	uid := utils.RandString(16)
+	uid := fmt.Sprintf("%x", lib.RandBytes(16))
 	addr := l.serve(uid)
 
 	arg = append([]string{uid, addr, name}, arg...)
@@ -66,15 +65,15 @@ func (l *Launcher) serve(uid string) string {
 		}
 
 		data, err := byframe.Encode(lib.Message{UID: uid})
-		utils.E(err)
+		lib.E(err)
 		_, err = conn.Write(data)
-		utils.E(err)
+		lib.E(err)
 
 		s := byframe.NewScanner(conn).Limit(1000)
 		for s.Scan() {
 			var msg lib.Message
 			err = s.Decode(&msg)
-			utils.E(err)
+			lib.E(err)
 
 			l.err = msg.Error
 			l.pid <- msg.PID
@@ -92,18 +91,18 @@ func (l *Launcher) getLeaklessBin() string {
 		bin += ".exe"
 	}
 
-	if !kos.FileExists(bin) {
+	if !lib.FileExists(bin) {
 		raw, err := base64.StdEncoding.DecodeString(leaklessBin)
-		utils.E(err)
+		lib.E(err)
 		gr, err := gzip.NewReader(bytes.NewBuffer(raw))
-		utils.E(err)
+		lib.E(err)
 		data, err := ioutil.ReadAll(gr)
-		utils.E(err)
-		utils.E(gr.Close())
+		lib.E(err)
+		lib.E(gr.Close())
 
-		err = kos.OutputFile(bin, data, nil)
-		utils.E(err)
-		utils.E(kos.Chmod(bin, 0755))
+		err = lib.OutputFile(bin, data, nil)
+		lib.E(err)
+		lib.E(os.Chmod(bin, 0755))
 	}
 
 	return bin

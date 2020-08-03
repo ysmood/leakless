@@ -17,8 +17,10 @@ type process struct {
 	Handle uintptr
 }
 
+// ProcessExitGroup ...
 type ProcessExitGroup windows.Handle
 
+// NewProcessExitGroup ...
 func NewProcessExitGroup() (ProcessExitGroup, error) {
 	handle, err := windows.CreateJobObject(nil, nil)
 	if err != nil {
@@ -41,10 +43,12 @@ func NewProcessExitGroup() (ProcessExitGroup, error) {
 	return ProcessExitGroup(handle), nil
 }
 
+// Dispose ...
 func (g ProcessExitGroup) Dispose() error {
 	return windows.CloseHandle(windows.Handle(g))
 }
 
+// AddProcess ...
 func (g ProcessExitGroup) AddProcess(p *os.Process) error {
 	return windows.AssignProcessToJobObject(
 		windows.Handle(g),

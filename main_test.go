@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ysmood/kit"
 	"github.com/ysmood/leakless"
 	"github.com/ysmood/leakless/lib"
 )
@@ -23,22 +22,22 @@ type stamp struct {
 
 func TestMain(m *testing.M) {
 	binDir := filepath.Join(os.TempDir(), "leakless-"+lib.Version)
-	kit.E(os.RemoveAll(binDir))
-	kit.E(kit.Mkdir("dist", nil))
-	kit.Exec("go", "build", "../cmd/test").Dir("dist").MustDo()
-	kit.Exec("go", "build", "../cmd/zombie").Dir("dist").MustDo()
+	lib.E(os.RemoveAll(binDir))
+	lib.E(lib.Mkdir("dist", nil))
+	lib.Exec("go", "dist", "build", "../cmd/test")
+	lib.Exec("go", "dist", "build", "../cmd/zombie")
 
 	os.Exit(m.Run())
 }
 
 func TestBasic(t *testing.T) {
-	kit.Exec(p("dist/test"), "on").MustDo()
+	lib.Exec(p("dist/test"), "", "on")
 
-	kit.Sleep(2)
+	lib.Sleep(2)
 	var s stamp
 	var pid int
-	_ = kit.ReadJSON(p("tmp/pid"), &s)
-	_ = kit.ReadJSON(p("tmp/sub-pid"), &pid)
+	_ = lib.ReadJSON(p("tmp/pid"), &s)
+	_ = lib.ReadJSON(p("tmp/sub-pid"), &pid)
 
 	assert.NotEmpty(t, s.Pid)
 	assert.Equal(t, s.Pid, pid)
@@ -47,7 +46,7 @@ func TestBasic(t *testing.T) {
 
 func TestErr(t *testing.T) {
 	l := leakless.New()
-	kit.E(l.Command("not-exists").Start())
+	lib.E(l.Command("not-exists").Start())
 
 	pid := <-l.Pid()
 	assert.Zero(t, pid)
@@ -57,11 +56,11 @@ func TestErr(t *testing.T) {
 func TestZombie(t *testing.T) {
 	cmd := exec.Command(p("dist/test"), "off")
 
-	kit.E(cmd.Run())
+	lib.E(cmd.Run())
 
-	kit.Sleep(2)
+	lib.Sleep(2)
 	var s stamp
-	_ = kit.ReadJSON(p("tmp/pid"), &s)
+	_ = lib.ReadJSON(p("tmp/pid"), &s)
 
 	assert.NotEmpty(t, s.Pid)
 	assert.True(t, time.Since(s.Time) < time.Second)

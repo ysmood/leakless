@@ -16,10 +16,17 @@ jobs:
       with:
         go-version: 1.14
 
-    - uses: actions/checkout@v1
+    - name: Set git to use LF
+      run: |
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+
+    - uses: actions/checkout@v2
 
     - name: test
       run: |
+        cd ..
         go get github.com/ysmood/kit/cmd/godev
+        cd leakless
         go generate
         go test

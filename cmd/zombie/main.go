@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ysmood/kit"
+	"github.com/ysmood/leakless/lib"
 )
 
 type stamp struct {
@@ -15,7 +15,7 @@ type stamp struct {
 
 func main() {
 	go func() {
-		kit.Sleep(10)
+		lib.Sleep(10)
 		os.Exit(1)
 	}()
 
@@ -27,7 +27,7 @@ func main() {
 			PID:  id,
 			Time: now,
 		}
-		kit.E(kit.OutputFile(filepath.FromSlash("tmp/pid"), s, nil))
-		kit.Sleep(0.3)
+		lib.E(lib.OutputFile(filepath.FromSlash("tmp/pid"), s, nil))
+		lib.Sleep(0.3)
 	}
 }

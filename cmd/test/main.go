@@ -5,8 +5,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/ysmood/kit"
 	"github.com/ysmood/leakless"
+	"github.com/ysmood/leakless/lib"
 )
 
 func main() {
@@ -17,14 +17,14 @@ func main() {
 		cmd = l.Command(p("dist/zombie"))
 		go func() {
 			pid := <-l.Pid()
-			kit.E(kit.OutputFile(filepath.FromSlash("tmp/sub-pid"), kit.MustToJSON(pid), nil))
+			lib.E(lib.OutputFile(filepath.FromSlash("tmp/sub-pid"), lib.MustToJSON(pid), nil))
 		}()
 	} else {
 		cmd = exec.Command(p("dist/zombie"))
 	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	kit.E(cmd.Start())
-	kit.E(cmd.Process.Release())
-	kit.Sleep(2)
+	lib.E(cmd.Start())
+	lib.E(cmd.Process.Release())
+	lib.Sleep(2)
 }

@@ -3,15 +3,19 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/md5"
 	"encoding/base64"
 	"fmt"
+	"os/exec"
 	"path/filepath"
 
-	"github.com/ysmood/kit"
+	"github.com/ysmood/leakless/lib"
 )
 
 func main() {
-	kit.Exec("godev", "build", "-n", "./cmd/leakless").MustDo()
+	setVersion()
+	lib.Exec("godev", "", "lint")
+	lib.Exec("godev", "", "build", "-n", "./cmd/leakless")
 	pack("linux")
 	pack("darwin")
 	pack("windows")
@@ -23,22 +27,22 @@ func pack(osName string) {
 
 	switch osName {
 	case "linux":
-		bin, err = kit.ReadFile(filepath.FromSlash("dist/leakless-linux"))
+		bin, err = lib.ReadFile(filepath.FromSlash("dist/leakless-linux"))
 	case "darwin":
-		bin, err = kit.ReadFile(filepath.FromSlash("dist/leakless-mac"))
+		bin, err = lib.ReadFile(filepath.FromSlash("dist/leakless-mac"))
 	case "windows":
-		bin, err = kit.ReadFile(filepath.FromSlash("dist/leakless-windows"))
+		bin, err = lib.ReadFile(filepath.FromSlash("dist/leakless-windows"))
 	default:
 		panic("unsupported os")
 	}
 
-	kit.E(err)
+	lib.E(err)
 
 	buf := bytes.Buffer{}
 	gw, err := gzip.NewWriterLevel(&buf, 9)
-	kit.E(err)
-	kit.E(gw.Write(bin))
-	kit.E(gw.Close())
+	lib.E(err)
+	lib.E(gw.Write(bin))
+	lib.E(gw.Close())
 
 	tpl := `package leakless
 
@@ -46,5 +50,23 @@ var leaklessBin = "%s"
 `
 	code := fmt.Sprintf(tpl, base64.StdEncoding.EncodeToString(buf.Bytes()))
 
-	kit.E(kit.OutputFile(fmt.Sprintf("bin_%s.go", osName), code, nil))
+	lib.E(lib.OutputFile(fmt.Sprintf("bin_%s.go", osName), code, nil))
+}
+
+func setVersion() {
+	files, err := filepath.Glob("cmd/leakless/*.go")
+	lib.E(err)
+
+	args := append([]string{"hash-object"}, append(files, "main.go")...)
+
+	raw, err := exec.Command("git", args...).CombinedOutput()
+	lib.E(err)
+
+	hash := md5.Sum(raw)
+
+	lib.E(lib.OutputFile("lib/version.go", fmt.Sprintf(`package lib
+
+// Version ...
+const Version = "%x"
+`, hash), nil))
 }
