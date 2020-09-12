@@ -57,7 +57,7 @@ func setVersion() {
 	files, err := filepath.Glob("cmd/leakless/*.go")
 	lib.E(err)
 
-	args := append([]string{"hash-object"}, append(files, "main.go")...)
+	args := append([]string{"hash-object"}, files...)
 
 	raw, err := exec.Command("git", args...).CombinedOutput()
 	lib.E(err)
