@@ -59,6 +59,8 @@ func (l *Launcher) serve(uid string) string {
 	}
 
 	go func() {
+		defer func() { _ = srv.Close() }()
+
 		conn, err := srv.Accept()
 		if err != nil {
 			return
