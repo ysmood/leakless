@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -14,7 +15,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ysmood/byframe/v2"
 	"github.com/ysmood/leakless/lib"
 )
 
@@ -66,20 +66,17 @@ func (l *Launcher) serve(uid string) string {
 			return
 		}
 
-		data, err := byframe.Encode(lib.Message{UID: uid})
-		lib.E(err)
-		_, err = conn.Write(data)
-		lib.E(err)
+		enc := json.NewEncoder(conn)
+		lib.E(enc.Encode(lib.Message{UID: uid}))
 
-		s := byframe.NewScanner(conn).Limit(1000)
-		for s.Scan() {
-			var msg lib.Message
-			err = s.Decode(&msg)
-			lib.E(err)
-
+		dec := json.NewDecoder(conn)
+		var msg lib.Message
+		err = dec.Decode(&msg)
+		if err == nil {
 			l.err = msg.Error
 			l.pid <- msg.PID
 		}
+		_ = dec.Decode(&msg)
 	}()
 
 	return srv.Addr().String()

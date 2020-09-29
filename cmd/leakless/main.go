@@ -1,11 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"net"
 	"os"
 	"os/exec"
 
-	"github.com/ysmood/byframe/v2"
 	"github.com/ysmood/leakless/lib"
 )
 
@@ -60,11 +60,10 @@ func main() {
 func guard(conn net.Conn, uid string, cmd *exec.Cmd) {
 	defer kill(cmd)
 
-	s := byframe.NewScanner(conn).Limit(100)
-	s.Scan()
+	dec := json.NewDecoder(conn)
 
 	var msg lib.Message
-	err := s.Decode(&msg)
+	err := dec.Decode(&msg)
 	if err != nil {
 		return
 	}
@@ -72,7 +71,7 @@ func guard(conn net.Conn, uid string, cmd *exec.Cmd) {
 		return
 	}
 
-	s.Scan()
+	_ = dec.Decode(&msg)
 }
 
 func panicErr(err error) {
@@ -83,9 +82,8 @@ func panicErr(err error) {
 }
 
 func send(conn net.Conn, pid int, errMessage string) {
-	data, err := byframe.Encode(lib.Message{PID: pid, Error: errMessage})
-	panicErr(err)
-	_, err = conn.Write(data)
+	enc := json.NewEncoder(conn)
+	err := enc.Encode(lib.Message{PID: pid, Error: errMessage})
 	panicErr(err)
 }
 
