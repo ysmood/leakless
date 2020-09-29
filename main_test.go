@@ -4,10 +4,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/ysmood/leakless"
 	"github.com/ysmood/leakless/lib"
@@ -31,7 +30,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestBasic(t *testing.T) {
-	assert.True(t, leakless.Support())
+	if !leakless.Support() {
+		t.Fail()
+	}
 
 	lib.Exec(p("dist/test"), "", "on")
 
@@ -41,9 +42,15 @@ func TestBasic(t *testing.T) {
 	_ = lib.ReadJSON(p("tmp/pid"), &s)
 	_ = lib.ReadJSON(p("tmp/sub-pid"), &pid)
 
-	assert.NotEmpty(t, s.Pid)
-	assert.Equal(t, s.Pid, pid)
-	assert.True(t, time.Since(s.Time) > time.Second)
+	if s.Pid == 0 {
+		t.Fail()
+	}
+	if s.Pid != pid {
+		t.Fail()
+	}
+	if time.Since(s.Time) < time.Second {
+		t.Fail()
+	}
 }
 
 func TestErr(t *testing.T) {
@@ -51,8 +58,12 @@ func TestErr(t *testing.T) {
 	lib.E(l.Command("not-exists").Start())
 
 	pid := <-l.Pid()
-	assert.Zero(t, pid)
-	assert.Regexp(t, `executable file not found`, l.Err())
+	if pid != 0 {
+		t.Fail()
+	}
+	if !regexp.MustCompile(`executable file not found`).MatchString(l.Err()) {
+		t.Fail()
+	}
 }
 
 func TestZombie(t *testing.T) {
@@ -64,6 +75,10 @@ func TestZombie(t *testing.T) {
 	var s stamp
 	_ = lib.ReadJSON(p("tmp/pid"), &s)
 
-	assert.NotEmpty(t, s.Pid)
-	assert.True(t, time.Since(s.Time) < time.Second)
+	if s.Pid == 0 {
+		t.Fail()
+	}
+	if time.Since(s.Time) > time.Second {
+		t.Fail()
+	}
 }
