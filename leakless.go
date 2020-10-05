@@ -33,7 +33,7 @@ func New() *Launcher {
 
 // Command will try to download the leakless bin and prefix the exec.Cmd with the leakless options.
 func (l *Launcher) Command(name string, arg ...string) *exec.Cmd {
-	bin := l.getLeaklessBin()
+	bin := GetLeaklessBin()
 
 	uid := fmt.Sprintf("%x", lib.RandBytes(16))
 	addr := l.serve(uid)
@@ -82,9 +82,12 @@ func (l *Launcher) serve(uid string) string {
 	return srv.Addr().String()
 }
 
-func (l *Launcher) getLeaklessBin() string {
-	dir := filepath.Join(os.TempDir(), "leakless-"+lib.Version)
-	bin := filepath.Join(dir, "leakless")
+var leaklessDir = filepath.Join(os.TempDir(), "leakless-"+lib.Version)
+
+// GetLeaklessBin returns the executable path of the guard.
+// Usually you use it to prevent race condition of the file creation of the guard bin.
+func GetLeaklessBin() string {
+	bin := filepath.Join(leaklessDir, "leakless")
 
 	if runtime.GOOS == "windows" {
 		bin += ".exe"
