@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sync"
 	"testing"
 	"time"
 
@@ -81,4 +82,19 @@ func TestZombie(t *testing.T) {
 	if time.Since(s.Time) > time.Second {
 		t.Fail()
 	}
+}
+
+func TestRace(t *testing.T) {
+	const port = 2978
+	wg := sync.WaitGroup{}
+
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func() {
+			defer leakless.LockPort(port)()
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
 }
