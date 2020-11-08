@@ -16,17 +16,15 @@ jobs:
       with:
         go-version: 1.15
 
-    - name: Set git to use LF
-      run: |
-        git config --global core.autocrlf false
-        git config --global core.eol lf
-
     - uses: actions/checkout@v2
+
+    - name: lint
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.31.0
+        golangci-lint run
+      if: matrix.os == 'ubuntu-latest'
 
     - name: test
       run: |
-        cd ..
-        go get github.com/ysmood/kit/cmd/godev
-        cd leakless
         go generate
         go test

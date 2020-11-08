@@ -6,6 +6,7 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -14,8 +15,9 @@ import (
 
 func main() {
 	setVersion()
-	lib.Exec("godev", "", "lint")
-	lib.Exec("godev", "", "build", "-n", "./cmd/leakless")
+
+	lib.E(os.RemoveAll("dist"))
+
 	pack("linux")
 	pack("darwin")
 	pack("windows")
@@ -25,17 +27,9 @@ func pack(osName string) {
 	var bin []byte
 	var err error
 
-	switch osName {
-	case "linux":
-		bin, err = lib.ReadFile(filepath.FromSlash("dist/leakless-linux"))
-	case "darwin":
-		bin, err = lib.ReadFile(filepath.FromSlash("dist/leakless-mac"))
-	case "windows":
-		bin, err = lib.ReadFile(filepath.FromSlash("dist/leakless-windows"))
-	default:
-		panic("unsupported os")
-	}
+	build(osName)
 
+	bin, err = lib.ReadFile(filepath.FromSlash("dist/leakless-" + osName))
 	lib.E(err)
 
 	buf := bytes.Buffer{}
@@ -69,4 +63,19 @@ func setVersion() {
 // Version ...
 const Version = "%x"
 `, hash), nil))
+}
+
+func build(osName string) {
+	cmd := exec.Command(
+		"go", "build",
+		"-trimpath",
+		"-ldflags=-w -s",
+		"-o", filepath.FromSlash("dist/leakless-"+osName),
+		filepath.FromSlash("./cmd/leakless"),
+	)
+	cmd.Env = append(os.Environ(), []string{
+		"GOOS=" + osName,
+		"GOARCH=amd64",
+	}...)
+	lib.E(cmd.Run())
 }
