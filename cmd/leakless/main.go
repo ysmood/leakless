@@ -36,15 +36,9 @@ func main() {
 		panicErr(err)
 	}
 
-	err = deathsig(cmd.Process)
-	if err != nil {
-		send(conn, cmd.Process.Pid, err.Error())
-		panicErr(err)
-	}
-
 	send(conn, cmd.Process.Pid, "")
 
-	go guard(conn, uid, cmd)
+	go guard(conn, uid, cmd.Process)
 
 	err = cmd.Wait()
 	if err != nil {
@@ -57,8 +51,8 @@ func main() {
 	}
 }
 
-func guard(conn net.Conn, uid string, cmd *exec.Cmd) {
-	defer kill(cmd)
+func guard(conn net.Conn, uid string, p *os.Process) {
+	defer kill(p)
 
 	dec := json.NewDecoder(conn)
 
@@ -85,10 +79,4 @@ func send(conn net.Conn, pid int, errMessage string) {
 	enc := json.NewEncoder(conn)
 	err := enc.Encode(lib.Message{PID: pid, Error: errMessage})
 	panicErr(err)
-}
-
-func kill(cmd *exec.Cmd) {
-	if cmd.Process != nil {
-		_ = cmd.Process.Kill()
-	}
 }

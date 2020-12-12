@@ -44,12 +44,15 @@ func TestBasic(t *testing.T) {
 	_ = lib.ReadJSON(p("tmp/sub-pid"), &pid)
 
 	if s.Pid == 0 {
+		t.Log("zombie pid should not be 0")
 		t.Fail()
 	}
 	if s.Pid != pid {
+		t.Log("zombie pid output from itself and guard should be the same")
 		t.Fail()
 	}
 	if time.Since(s.Time) < time.Second {
+		t.Log("zombie should be killed")
 		t.Fail()
 	}
 }
