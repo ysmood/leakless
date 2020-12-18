@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -27,7 +28,9 @@ func main() {
 	addr := os.Args[2]
 
 	conn, err := net.Dial("tcp", addr)
-	panicErr(err)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	cmd := exec.Command(os.Args[3], os.Args[4:]...)
 	cmd.Stdin = os.Stdin
@@ -36,11 +39,15 @@ func main() {
 
 	err = cmd.Start()
 	if err != nil {
-		send(conn, 0, err.Error())
-		panicErr(err)
+		_ = send(conn, 0, err.Error())
+		log.Fatalln(err)
 	}
 
-	send(conn, cmd.Process.Pid, "")
+	err = send(conn, cmd.Process.Pid, "")
+	if err != nil {
+		kill(cmd.Process)
+		log.Fatalln(err)
+	}
 
 	go guard(conn, uid, cmd.Process)
 
@@ -51,7 +58,10 @@ func main() {
 			os.Exit(exitErr.ExitCode())
 			return
 		}
-		send(conn, 0, err.Error())
+		err = send(conn, 0, err.Error())
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 }
 
@@ -72,17 +82,9 @@ func guard(conn net.Conn, uid string, p *os.Process) {
 	_ = dec.Decode(&msg)
 }
 
-func panicErr(err error) {
-	if err == nil {
-		return
-	}
-	panic("[leakless] " + err.Error())
-}
-
-func send(conn net.Conn, pid int, errMessage string) {
+func send(conn net.Conn, pid int, errMessage string) error {
 	enc := json.NewEncoder(conn)
-	err := enc.Encode(lib.Message{PID: pid, Error: errMessage})
-	panicErr(err)
+	return enc.Encode(lib.Message{PID: pid, Error: errMessage})
 }
 
 // OS may send signals to interrupt processes in the same group, as a guard process leakless shouldn't be stopped by them.
