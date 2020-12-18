@@ -5,11 +5,15 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"os/signal"
+	"syscall"
 
 	"github.com/ysmood/leakless/lib"
 )
 
 func main() {
+	go ignoreSignals()
+
 	if len(os.Args) == 2 && os.Args[1] == "--version" {
 		_, _ = os.Stdout.WriteString(lib.Version + "\n")
 		return
@@ -79,4 +83,12 @@ func send(conn net.Conn, pid int, errMessage string) {
 	enc := json.NewEncoder(conn)
 	err := enc.Encode(lib.Message{PID: pid, Error: errMessage})
 	panicErr(err)
+}
+
+// OS may send signals to interrupt processes in the same group, as a guard process leakless shouldn't be stopped by them.
+func ignoreSignals() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	for range c {
+	}
 }
