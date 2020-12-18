@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	go ignoreSignals()
+	ignoreSignals()
 
 	if len(os.Args) == 2 && os.Args[1] == "--version" {
 		_, _ = os.Stdout.WriteString(lib.Version + "\n")
@@ -87,8 +87,10 @@ func send(conn net.Conn, pid int, errMessage string) {
 
 // OS may send signals to interrupt processes in the same group, as a guard process leakless shouldn't be stopped by them.
 func ignoreSignals() {
-	c := make(chan os.Signal, 1)
+	c := make(chan os.Signal)
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	for range c {
-	}
+	go func() {
+		for range c {
+		}
+	}()
 }
