@@ -89,10 +89,5 @@ func send(conn net.Conn, pid int, errMessage string) error {
 
 // OS may send signals to interrupt processes in the same group, as a guard process leakless shouldn't be stopped by them.
 func ignoreSignals() {
-	c := make(chan os.Signal)
-	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	go func() {
-		for range c {
-		}
-	}()
+	signal.Ignore(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 }
