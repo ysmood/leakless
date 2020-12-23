@@ -37,6 +37,12 @@ func main() {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
+	err = osSetupCmd(cmd)
+	if err != nil {
+		_ = send(conn, 0, err.Error())
+		log.Fatalln(err)
+	}
+
 	err = cmd.Start()
 	if err != nil {
 		_ = send(conn, 0, err.Error())
