@@ -48,8 +48,13 @@ var leaklessBin = "%s"
 }
 
 func setVersion() {
-	files, err := filepath.Glob("cmd/leakless/*.go")
+	a, err := filepath.Glob("cmd/leakless/*.go")
 	lib.E(err)
+
+	b, err := filepath.Glob("cmd/pack/*.go")
+	lib.E(err)
+
+	files := append(a, b...)
 
 	args := append([]string{"hash-object"}, files...)
 
