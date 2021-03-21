@@ -66,13 +66,22 @@ const Version = "%x"
 }
 
 func build(osName string) {
-	cmd := exec.Command(
-		"go", "build",
+	flags := []string{
+		"build",
 		"-trimpath",
-		"-ldflags=-w -s",
-		"-o", filepath.FromSlash("dist/leakless-"+osName),
-		filepath.FromSlash("./cmd/leakless"),
-	)
+		"-o", filepath.FromSlash("dist/leakless-" + osName),
+	}
+
+	ldFlags := "-ldflags=-w -s"
+	if osName == "windows" {
+		// On Windows, -H windowsgui writes a "GUI binary" instead of a "console binary."
+		ldFlags += " -H=windowsgui"
+	}
+	flags = append(flags, ldFlags)
+
+	flags = append(flags, filepath.FromSlash("./cmd/leakless"))
+
+	cmd := exec.Command("go", flags...)
 	cmd.Env = append(os.Environ(), []string{
 		"GOOS=" + osName,
 		"GOARCH=amd64",
