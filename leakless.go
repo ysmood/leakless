@@ -77,7 +77,9 @@ func (l *Launcher) serve(uid string) string {
 		}
 
 		enc := json.NewEncoder(conn)
-		lib.E(enc.Encode(lib.Message{UID: uid}))
+		if enc.Encode(lib.Message{UID: uid}) != nil {
+			return
+		}
 
 		dec := json.NewDecoder(conn)
 		var msg lib.Message
