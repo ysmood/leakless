@@ -73,11 +73,16 @@ func (l *Launcher) serve(uid string) string {
 
 		conn, err := srv.Accept()
 		if err != nil {
+			l.err = err.Error()
+			l.pid <- 0
 			return
 		}
 
 		enc := json.NewEncoder(conn)
-		if enc.Encode(lib.Message{UID: uid}) != nil {
+		err = enc.Encode(lib.Message{UID: uid})
+		if err != nil {
+			l.err = err.Error()
+			l.pid <- 0
 			return
 		}
 
