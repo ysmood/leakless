@@ -9,14 +9,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/ysmood/leakless/lib"
+	"github.com/ysmood/leakless/pkg/shared"
 )
 
 func main() {
 	ignoreSignals()
 
 	if len(os.Args) == 2 && os.Args[1] == "--version" {
-		_, _ = os.Stdout.WriteString(lib.Version + "\n")
+		_, _ = os.Stdout.WriteString(shared.Version + "\n")
 		return
 	}
 
@@ -76,7 +76,7 @@ func guard(conn net.Conn, uid string, p *os.Process) {
 
 	dec := json.NewDecoder(conn)
 
-	var msg lib.Message
+	var msg shared.Message
 	err := dec.Decode(&msg)
 	if err != nil {
 		return
@@ -90,7 +90,7 @@ func guard(conn net.Conn, uid string, p *os.Process) {
 
 func send(conn net.Conn, pid int, errMessage string) error {
 	enc := json.NewEncoder(conn)
-	return enc.Encode(lib.Message{PID: pid, Error: errMessage})
+	return enc.Encode(shared.Message{PID: pid, Error: errMessage})
 }
 
 // OS may send signals to interrupt processes in the same group, as a guard process leakless shouldn't be stopped by them.

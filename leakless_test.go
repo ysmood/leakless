@@ -10,7 +10,8 @@ import (
 	"time"
 
 	"github.com/ysmood/leakless"
-	"github.com/ysmood/leakless/lib"
+	"github.com/ysmood/leakless/pkg/shared"
+	"github.com/ysmood/leakless/pkg/utils"
 )
 
 var p = filepath.FromSlash
@@ -21,11 +22,11 @@ type stamp struct {
 }
 
 func TestMain(m *testing.M) {
-	binDir := filepath.Join(os.TempDir(), "leakless-"+lib.Version)
-	lib.E(os.RemoveAll(binDir))
-	lib.E(lib.Mkdir("dist", nil))
-	lib.Exec("go", "dist", "build", "../cmd/test")
-	lib.Exec("go", "dist", "build", "../cmd/zombie")
+	binDir := filepath.Join(os.TempDir(), "leakless-"+shared.Version)
+	utils.E(os.RemoveAll(binDir))
+	utils.E(utils.Mkdir("dist", nil))
+	utils.Exec("go", "dist", "build", "../cmd/test")
+	utils.Exec("go", "dist", "build", "../cmd/zombie")
 
 	os.Exit(m.Run())
 }
@@ -35,13 +36,13 @@ func TestBasic(t *testing.T) {
 		t.Fail()
 	}
 
-	lib.Exec(p("dist/test"), "", "on")
+	utils.Exec(p("dist/test"), "", "on")
 
-	lib.Sleep(2)
+	utils.Sleep(2)
 	var s stamp
 	var pid int
-	_ = lib.ReadJSON(p("tmp/pid"), &s)
-	_ = lib.ReadJSON(p("tmp/sub-pid"), &pid)
+	_ = utils.ReadJSON(p("tmp/pid"), &s)
+	_ = utils.ReadJSON(p("tmp/sub-pid"), &pid)
 
 	if s.Pid == 0 {
 		t.Log("zombie pid should not be 0")
@@ -59,7 +60,7 @@ func TestBasic(t *testing.T) {
 
 func TestErr(t *testing.T) {
 	l := leakless.New()
-	lib.E(l.Command("not-exists").Start())
+	utils.E(l.Command("not-exists").Start())
 
 	pid := <-l.Pid()
 	if pid != 0 {
@@ -73,11 +74,11 @@ func TestErr(t *testing.T) {
 func TestZombie(t *testing.T) {
 	cmd := exec.Command(p("dist/test"), "off")
 
-	lib.E(cmd.Run())
+	utils.E(cmd.Run())
 
-	lib.Sleep(2)
+	utils.Sleep(2)
 	var s stamp
-	_ = lib.ReadJSON(p("tmp/pid"), &s)
+	_ = utils.ReadJSON(p("tmp/pid"), &s)
 
 	if s.Pid == 0 {
 		t.Fail()

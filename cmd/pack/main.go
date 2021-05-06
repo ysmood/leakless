@@ -10,75 +10,78 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/ysmood/leakless/lib"
+	"github.com/ysmood/leakless/pkg/utils"
 )
 
 func main() {
 	setVersion()
 
-	lib.E(os.RemoveAll("dist"))
+	utils.E(os.RemoveAll("dist"))
 
-	pack("linux")
-	pack("darwin")
-	pack("windows")
+	for _, target := range targets {
+		pack(target)
+	}
 }
 
-func pack(osName string) {
+func pack(target utils.Target) {
 	var bin []byte
 	var err error
+	name := target.BinName()
 
-	build(osName)
+	build(target)
 
-	bin, err = lib.ReadFile(filepath.FromSlash("dist/leakless-" + osName))
-	lib.E(err)
+	bin, err = utils.ReadFile(filepath.FromSlash("dist/leakless-" + name))
+	utils.E(err)
 
 	buf := bytes.Buffer{}
 	gw, err := gzip.NewWriterLevel(&buf, 9)
-	lib.E(err)
-	lib.E(gw.Write(bin))
-	lib.E(gw.Close())
+	utils.E(err)
+	utils.E(gw.Write(bin))
+	utils.E(gw.Close())
 
 	tpl := `package leakless
 
-var leaklessBin = "%s"
+func init() {
+	leaklessBinaries["%s"] = "%s"
+}
 `
-	code := fmt.Sprintf(tpl, base64.StdEncoding.EncodeToString(buf.Bytes()))
+	code := fmt.Sprintf(tpl, name, base64.StdEncoding.EncodeToString(buf.Bytes()))
 
-	lib.E(lib.OutputFile(fmt.Sprintf("bin_%s.go", osName), code, nil))
+	utils.E(utils.OutputFile(fmt.Sprintf("bin_%s.go", name), code, nil))
 }
 
 func setVersion() {
 	a, err := filepath.Glob("cmd/leakless/*.go")
-	lib.E(err)
+	utils.E(err)
 
 	b, err := filepath.Glob("cmd/pack/*.go")
-	lib.E(err)
+	utils.E(err)
 
 	files := append(a, b...)
 
 	args := append([]string{"hash-object"}, files...)
 
 	raw, err := exec.Command("git", args...).CombinedOutput()
-	lib.E(err)
+	utils.E(err)
 
 	hash := md5.Sum(raw)
 
-	lib.E(lib.OutputFile("lib/version.go", fmt.Sprintf(`package lib
+	utils.E(utils.OutputFile("pkg/shared/version.go", fmt.Sprintf(`package shared
 
 // Version ...
 const Version = "%x"
 `, hash), nil))
 }
 
-func build(osName string) {
+func build(target utils.Target) {
 	flags := []string{
 		"build",
 		"-trimpath",
-		"-o", filepath.FromSlash("dist/leakless-" + osName),
+		"-o", filepath.FromSlash("dist/leakless-" + target.BinName()),
 	}
 
 	ldFlags := "-ldflags=-w -s"
-	if osName == "windows" {
+	if target.OS() == "windows" {
 		// On Windows, -H windowsgui writes a "GUI binary" instead of a "console binary."
 		ldFlags += " -H=windowsgui"
 	}
@@ -88,8 +91,8 @@ func build(osName string) {
 
 	cmd := exec.Command("go", flags...)
 	cmd.Env = append(os.Environ(), []string{
-		"GOOS=" + osName,
-		"GOARCH=amd64",
+		"GOOS=" + target.OS(),
+		"GOARCH=" + target.ARCH(),
 	}...)
-	lib.E(cmd.Run())
+	utils.E(cmd.Run())
 }
