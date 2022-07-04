@@ -1,6 +1,8 @@
 package leakless_test
 
 import (
+	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -101,4 +103,35 @@ func TestRace(t *testing.T) {
 	}
 
 	wg.Wait()
+}
+
+func TestC(t *testing.T) {
+	o, err := exec.Command("gcc", "cmd/leakless/main.c", "-o", "dist/test").CombinedOutput()
+	if err != nil {
+		t.Error(string(o))
+	}
+
+	srv, err := net.Listen("tcp", "127.0.0.1:3127")
+	if err != nil {
+		t.Error(err)
+	}
+
+	go func() {
+		o, err := exec.Command("dist/test", "3127", "test").CombinedOutput()
+		if err != nil {
+			t.Error(string(o))
+		}
+		fmt.Println("########", string(o))
+	}()
+
+	conn, err := srv.Accept()
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println("********")
+
+	time.Sleep(time.Second)
+	conn.Close()
+	time.Sleep(time.Hour)
 }
