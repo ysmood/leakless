@@ -105,8 +105,8 @@ func TestRace(t *testing.T) {
 	wg.Wait()
 }
 
-func TestC(t *testing.T) {
-	o, err := exec.Command("gcc", "cmd/leakless/main.c", "-o", "dist/test").CombinedOutput()
+func TestZig(t *testing.T) {
+	o, err := exec.Command("zig", "build-exe", "-O", "ReleaseSmall", "cmd/leakless/main.zig").CombinedOutput()
 	if err != nil {
 		t.Error(string(o))
 	}
@@ -117,11 +117,8 @@ func TestC(t *testing.T) {
 	}
 
 	go func() {
-		o, err := exec.Command("dist/test", "3127", "test").CombinedOutput()
-		if err != nil {
-			t.Error(string(o))
-		}
-		fmt.Println("########", string(o))
+		o, _ := exec.Command("./main", "3127", "test").CombinedOutput()
+		fmt.Println("########", string(o), "#####")
 	}()
 
 	conn, err := srv.Accept()
@@ -133,5 +130,5 @@ func TestC(t *testing.T) {
 
 	time.Sleep(time.Second)
 	conn.Close()
-	time.Sleep(time.Hour)
+	time.Sleep(time.Second)
 }
