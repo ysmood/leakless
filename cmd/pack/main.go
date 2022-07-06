@@ -17,6 +17,7 @@ func main() {
 	setVersion()
 
 	utils.E(os.RemoveAll("dist"))
+	utils.E(os.MkdirAll("dist", 0755))
 
 	for _, target := range targets {
 		pack(target)
@@ -74,25 +75,16 @@ const Version = "%x"
 }
 
 func build(target utils.Target) {
-	flags := []string{
-		"build",
-		"-trimpath",
-		"-o", filepath.FromSlash("dist/leakless-" + target.BinName()),
+	o, err := exec.Command("zig", "build-exe",
+		"-O", "ReleaseSmall", "--strip",
+		"cmd/leakless/main.zig",
+		"--target", string(target),
+	).CombinedOutput()
+	if err != nil {
+		panic(string(o))
 	}
 
-	ldFlags := "-ldflags=-w -s"
-	if target.OS() == "windows" {
-		// On Windows, -H windowsgui writes a "GUI binary" instead of a "console binary."
-		ldFlags += " -H=windowsgui"
-	}
-	flags = append(flags, ldFlags)
+	dest := filepath.FromSlash("dist/leakless-" + target.BinName())
 
-	flags = append(flags, filepath.FromSlash("./cmd/leakless"))
-
-	cmd := exec.Command("go", flags...)
-	cmd.Env = append(os.Environ(), []string{
-		"GOOS=" + target.OS(),
-		"GOARCH=" + target.ARCH(),
-	}...)
-	utils.E(cmd.Run())
+	utils.E(os.Rename("main", dest))
 }

@@ -1,8 +1,6 @@
 package leakless_test
 
 import (
-	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -103,32 +101,4 @@ func TestRace(t *testing.T) {
 	}
 
 	wg.Wait()
-}
-
-func TestZig(t *testing.T) {
-	o, err := exec.Command("zig", "build-exe", "-O", "ReleaseSmall", "cmd/leakless/main.zig").CombinedOutput()
-	if err != nil {
-		t.Error(string(o))
-	}
-
-	srv, err := net.Listen("tcp", "127.0.0.1:3127")
-	if err != nil {
-		t.Error(err)
-	}
-
-	go func() {
-		o, _ := exec.Command("./main", "3127", "test").CombinedOutput()
-		fmt.Println("########", string(o), "#####")
-	}()
-
-	conn, err := srv.Accept()
-	if err != nil {
-		t.Error(err)
-	}
-
-	fmt.Println("********")
-
-	time.Sleep(time.Second)
-	conn.Close()
-	time.Sleep(time.Second)
 }

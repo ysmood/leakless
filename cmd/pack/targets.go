@@ -1,11 +1,10 @@
 package main
 
-import "github.com/ysmood/leakless/pkg/utils"
-
 // The targets to pack into the main package
-var targets = []utils.Target{
-	"linux/amd64",
-	"darwin/amd64",
-	"darwin/arm64",
-	"windows/amd64",
+var targets = []string{
+	"x86_64-linux",
+	"x86_64-macos",
+	"x86_64-windows",
+	"aarch64-linux",
+	"aarch64-macos",
 }
