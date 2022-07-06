@@ -17,10 +17,10 @@ pub fn main() anyerror!void {
     _ = try std.Thread.spawn(.{}, guard, .{ args[1], p.pid });
 
     std.os.exit(switch (try p.wait()) {
-        std.ChildProcess.Term.Exited => |v| v,
-        std.ChildProcess.Term.Signal => |v| @truncate(u8, v),
-        std.ChildProcess.Term.Stopped => |v| @truncate(u8, v),
-        std.ChildProcess.Term.Unknown => |v| @truncate(u8, v),
+        .Exited => |v| v,
+        .Signal => |v| @truncate(u8, v),
+        .Stopped => |v| @truncate(u8, v),
+        .Unknown => |v| @truncate(u8, v),
     });
 }
 
@@ -34,19 +34,30 @@ fn run(args: []const []const u8) !*std.ChildProcess {
 fn guard(port: []u8, pid: std.os.system.pid_t) !void {
     defer kill(pid);
 
-    const addr = try std.net.Address.parseIp("127.0.0.1", try std.fmt.parseInt(u16, port, 10));
-    const sock = try std.net.tcpConnectToAddress(addr);
+    const pi = try std.fmt.parseInt(u16, port, 10);
+    const addr = try std.net.Address.parseIp("127.0.0.1", pi);
 
-    var buf: [1]u8 = undefined;
-    _ = sock.reader().read(&buf) catch 0;
+    if (std.net.tcpConnectToAddress(addr)) |sock| {
+        var buf: [1]u8 = undefined;
+        _ = sock.reader().read(&buf) catch 0;
+    } else |err| {
+        _ = err catch null;
+        return;
+    }
 }
 
 fn kill(pid: std.os.system.pid_t) void {
+    var buf: [8]u8 = undefined;
+    const pid_str = std.fmt.bufPrint(buf[0..], "{}", .{pid}) catch "";
+
+    var args = [_][]const u8{"kill", "--", pid_str};
     if (builtin.os.tag == .windows) {
-        const pid_str = std.fmt.comptimePrint("{}", .{pid});
-        var p = try std.ChildProcess.init([]u8{"taskkill", "/t", "/f", "/pid", pid_str}, allocator);
-        _ = p.spawnAndWait() catch std.ChildProcess.Term.Unknown;
-    } else {
-        _ = std.os.kill(-pid, std.os.SIG.KILL) catch std.ChildProcess.Term.Unknown;
+        args = [_][]const u8{"taskkill", "/t", "/f", "/pid", pid_str};
+    }
+
+    if (std.ChildProcess.init(args[0..], allocator)) |p| {
+        _ = p.spawnAndWait() catch .Unknown;
+    } else |err| {
+        _ = err catch null;
     }
 }
