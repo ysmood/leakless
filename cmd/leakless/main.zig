@@ -42,7 +42,6 @@ fn guard(port: []u8, pid: std.os.system.pid_t) !void {
         _ = sock.reader().read(&buf) catch 0;
     } else |err| {
         _ = err catch null;
-        return;
     }
 }
 
