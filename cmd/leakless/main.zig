@@ -47,17 +47,15 @@ fn guard(port: []u8, pid: std.os.system.pid_t) !void {
 }
 
 fn kill(pid: std.os.system.pid_t) void {
-    var buf: [8]u8 = undefined;
-    const pid_str = std.fmt.bufPrint(buf[0..], "{}", .{pid}) catch "";
-
-    var args = [_][]const u8{"kill", "--", pid_str};
     if (builtin.os.tag == .windows) {
-        args = [_][]const u8{"taskkill", "/t", "/f", "/pid", pid_str};
-    }
-
-    if (std.ChildProcess.init(args[0..], allocator)) |p| {
-        _ = p.spawnAndWait() catch .Unknown;
-    } else |err| {
-        _ = err catch null;
+        var buf: [8]u8 = undefined;
+        const pid_str = std.fmt.bufPrint(buf[0..], "{}", .{pid}) catch "";
+        if (std.ChildProcess.init([][]u8{"taskkill", "/t", "/f", "/pid", pid_str}, allocator)) |p| {
+            _ = p.spawnAndWait() catch .Unknown;
+        } else |err| {
+            _ = err catch null;
+        }
+    } else {
+        _ = std.os.kill(pid, std.os.SIG.KILL) catch null;
     }
 }
