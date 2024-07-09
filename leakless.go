@@ -102,7 +102,7 @@ func (l *Launcher) serve(uid string) string {
 	return srv.Addr().String()
 }
 
-var leaklessDir = filepath.Join(os.TempDir(), "leakless-"+shared.Version)
+var leaklessDir = filepath.Join(os.TempDir(), fmt.Sprintf("leakless-%s-%s", runtime.GOARCH, shared.Version))
 
 // GetLeaklessBin returns the executable path of the guard, if it doesn't exists create one.
 func GetLeaklessBin() string {
