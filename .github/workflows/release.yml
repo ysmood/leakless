@@ -12,11 +12,11 @@ jobs:
     runs-on: macos-latest # TODO: if we use ubuntu, the cross-built won't work in docker
 
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
         with:
           go-version: 1.18
-
-      - uses: actions/checkout@v2
 
       - name: release
         run: |

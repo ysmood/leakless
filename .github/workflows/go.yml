@@ -1,9 +1,7 @@
 name: Go
 on: [push]
 jobs:
-
   test:
-
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -11,18 +9,17 @@ jobs:
         os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
+      - uses: actions/checkout@v4
 
-    - uses: actions/setup-go@v2
-      with:
-        go-version: 1.16
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.22
 
-    - uses: actions/checkout@v2
+      - name: lint
+        run: go run github.com/ysmood/golangci-lint@latest -v 1.58.0
+        if: matrix.os == 'ubuntu-latest'
 
-    - name: lint
-      run: go install github.com/ysmood/golangci-lint@latest && golangci-lint
-      if: matrix.os == 'ubuntu-latest'
-
-    - name: test
-      run: |
-        go generate
-        go test
+      - name: test
+        run: |
+          go generate
+          go test
