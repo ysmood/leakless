@@ -1,8 +1,17 @@
 # leakless
 
-Run sub-process and make sure to kill it when the parent process exits.
-The way how it works is to output a standalone executable file to guard the subprocess and check parent TCP connection with a UUID.
-So that it works consistently on Linux, Mac, and Windows.
+Golang doesn't provide a way for third-party packages to implicitly register a callback when the main process exits to do cleanups. If you fail to explicitly add proper code in your main to kill sub-processes that are created by third-party packages they may keep running after the main process exists or crashes.
+
+Leakless ensures to kill the sub-process when the main process exits.
+
+How it works:
+
+1. Main process outputs a standalone executable file and executes it as a guard process.
+1. A TCP connection is created between main process and the guard process.
+1. The guard process starts the sub-process.
+1. If the TCP connection is closed, the guard process will kill the sub-process.
+
+This design ensures it works consistently across different platforms, the CI tests Linux, Mac, and Windows.
 
 If you don't trust the executable, you can build it yourself from the source code by running `go generate` at the root of this repo, then use the [replace](https://golang.org/ref/mod#go-mod-file-replace) to use your own module. Usually, it won't be a concern, all the executables are committed by this [Github Action](https://github.com/ysmood/leakless/actions?query=workflow%3ARelease), the Action will print the hash of the commit, you can compare it with the repo.
 
