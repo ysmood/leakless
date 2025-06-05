@@ -6,6 +6,7 @@ import "github.com/ysmood/leakless/pkg/utils"
 var targets = []utils.Target{
 	"linux/amd64",
 	"linux/arm64",
+	"linux/arm",
 	"darwin/amd64",
 	"darwin/arm64",
 	"windows/amd64",

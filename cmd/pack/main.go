@@ -3,12 +3,12 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
-	"crypto/md5"
 	"encoding/base64"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/ysmood/leakless/pkg/utils"
 )
@@ -57,14 +57,15 @@ func setVersion() {
 	b, err := filepath.Glob("cmd/pack/*.go")
 	utils.E(err)
 
-	files := append(a, b...)
+	c := []string{} // Excluded "targets.go"
+	for _, f := range b {
+		if !strings.HasSuffix(f, "targets.go") {
+			c = append(c, f)
+		}
+	}
 
-	args := append([]string{"hash-object"}, files...)
-
-	raw, err := exec.Command("git", args...).CombinedOutput()
+	hash, err := utils.HashFiles(append(a, c...))
 	utils.E(err)
-
-	hash := md5.Sum(raw)
 
 	utils.E(utils.OutputFile("pkg/shared/version.go", fmt.Sprintf(`package shared
 
@@ -77,10 +78,11 @@ func build(target utils.Target) {
 	flags := []string{
 		"build",
 		"-trimpath",
+		"-buildvcs=false",
 		"-o", filepath.FromSlash("dist/leakless-" + target.BinName()),
 	}
 
-	ldFlags := "-ldflags=-w -s"
+	ldFlags := "-ldflags=-w -s -buildid="
 	if target.OS() == "windows" {
 		// On Windows, -H windowsgui writes a "GUI binary" instead of a "console binary."
 		ldFlags += " -H=windowsgui"
